@@ -1,0 +1,72 @@
+   pipeline{
+      agent none
+      stages{
+            stage("Download code from Git"){
+               agent { label 'master' }
+               steps{
+                  git 'https://github.com/jhonnrock/TutoAngular.git'
+               }
+      }
+         stage("Build of angular cli"){
+               agent { docker 'node:12.2.0' }
+            steps{
+                  sh "npm install"
+                  sh "npm install -g @angular/cli"
+                  
+               }
+         } 
+       
+
+         stage("Angular package"){
+            agent{label "master"}
+            steps{
+               sh "docker build -t node:v1 ."
+            }
+         }   
+
+
+         stage("Run package angular"){
+            agent{label "master"}
+            steps{
+               sh "docker rm angular -f || true" 
+               sh "docker run -d -p 4200:4200  --name angular node:v1"
+
+            }
+         }  
+
+         stage("Get Automation Repository"){
+               agent { label 'master' }
+               steps{
+                  git 'https://github.com/jhonnrock/Devopstest.git'
+               }
+               
+         } 
+        
+         stage("Run Automation tests"){
+            agent { label 'master' }
+            steps{
+                sh "docker rm browser -f || true"
+                sh "docker run -d -p 4444:4444 --name browser selenium/standalone-chrome"
+               // sh "npm test -f browser"
+            }
+            
+        }
+
+       
+        stage("Generate Automation report"){
+            agent{label "master"}
+            steps{
+                cucumber buildStatus: 'UNSTABLE',
+                fileIncludePattern: '*.json',
+                trendsLimit: 10,
+                classifications: [
+                    [
+                        'key': 'Browser',
+                        'value': 'Chrome'
+                    ]
+                ]
+            }
+        }
+          
+   }
+   }
