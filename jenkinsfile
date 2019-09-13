@@ -47,7 +47,7 @@
             steps{
                 sh "docker rm browser -f || true"
                 sh "docker run -d -p 4444:4444 --name browser selenium/standalone-chrome"
-               // sh "npm test -f browser"
+                sh "./gradlew test"  ///here error the compilar
             }
             
         }
